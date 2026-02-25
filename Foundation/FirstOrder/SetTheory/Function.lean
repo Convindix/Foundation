@@ -430,7 +430,7 @@ lemma domain_restrict_eq (R A : V) : domain (R ↾ A) = domain R ∩ A := by
 noncomputable def image (R A : V) : V := range (restrict R A)
 
 /-- Image of a set under a relation -/
-scoped notation R:arg " “ " A:arg => restrict R A
+scoped notation R:arg " “ " A:arg => image R A
 
 def image.dfn : Semisentence ℒₛₑₜ 3 := f“B R A. B = !range.dfn (!restrict.dfn R A)”
 
