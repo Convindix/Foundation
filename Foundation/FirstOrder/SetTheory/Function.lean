@@ -389,7 +389,7 @@ instance value.defined : ℒₛₑₜ-function₂[V] value via value.dfn :=
 
 instance value.definable : ℒₛₑₜ-function₂[V] value := value.defined.to_definable
 
-lemma value_mem_range (f x : V) {X Y : V} {hf : f ∈ Y ^ X} {hx : x ∈ X} : f ‘ x ∈ range f := by
+lemma value_mem_range {f x : V} {X Y : V} (hf : f ∈ Y ^ X) (hx : x ∈ X) : f ‘ x ∈ range f := by
   simp_all only [mem_function_iff, value, mem_range_iff]
   obtain ⟨hfleft, hfright⟩ := hf
   specialize hfright x hx
