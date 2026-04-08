@@ -469,9 +469,7 @@ lemma attempt_function_exists_sUnion_of_collected_on
     use u
 
 lemma zero_or_succ_or_limit
-    [SetStructure V]
     [V ⊧ₘ* 𝗭𝗙]
-    [V ⊧ₘ* 𝗭]
     (α : Ordinal V) :
     α.val = ∅
     ∨ (∃ β : Ordinal V, succ β.val = α)
@@ -502,20 +500,14 @@ lemma zero_or_succ_or_limit
       simpa only [hαx, or_false] using htri
 
 lemma attempt_function_exists_on
-    [SetStructure V]
     [V ⊧ₘ* 𝗭𝗙]
-    [V ⊧ₘ* 𝗭]
     (F : V → V)
     (hFdef : ℒₛₑₜ-function₁[V] F)
     (α : Ordinal V) :
     ExistsAttemptOfFunctionOn F α := by
   apply transfinite_induction (P := ExistsAttemptOfFunction F) (hP := by definability)
   intro α ih
-  have hαzerosucclim : α.val = ∅
-      ∨ (∃ β : Ordinal V, succ β.val = α)
-      ∨ ∀ x ∈ α.val, ∃ β ∈ α.val, x ∈ β := by
-    apply zero_or_succ_or_limit
-  rcases hαzerosucclim with hzero | hsucc | hlim
+  rcases zero_or_succ_or_limit α with hzero | hsucc | hlim
   · -- Zero case
     use ∅
     refine ⟨Ordinal.instIsOrdinalVal, ?_, ?_, ?_⟩
