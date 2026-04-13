@@ -27,7 +27,10 @@ inductive Semiterm (L : Language) (ξ : Type*) (n : ℕ)
   | fvar : ξ → Semiterm L ξ n
   | func : ∀ {arity}, L.Func arity → (Fin arity → Semiterm L ξ n) → Semiterm L ξ n
 
+/-- A free variable. -/
 scoped prefix:max "&" => Semiterm.fvar
+
+/-- A bound variable. -/
 scoped prefix:max "#" => Semiterm.bvar
 
 abbrev Term (L : Language) (ξ : Type*) := Semiterm L ξ 0

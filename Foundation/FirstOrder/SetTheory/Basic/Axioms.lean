@@ -53,6 +53,14 @@ def foundation : Sentence ℒₛₑₜ := “∀ x, !isNonempty x → ∃ y ∈ 
 def separationSchema (φ : SyntacticSemiformula ℒₛₑₜ 1) : Sentence ℒₛₑₜ :=
   .univCl “∀ x, ∃ y, ∀ z, z ∈ y ↔ z ∈ x ∧ !φ z”
 
+/-- Axiom schema of induction. -/
+def inductionSchema (φ : SyntacticSemiformula ℒₛₑₜ 1) : Sentence ℒₛₑₜ :=
+  .univCl “(∃ x, !φ x) → ∃ x, !φ x ∧ ∀ y ∈ x, ¬ !φ y”
+
+/-- Axiom schema of collection. -/
+def collectionSchema (φ : SyntacticSemiformula ℒₛₑₜ 2) : Sentence ℒₛₑₜ :=
+  .univCl “(∀ x, ∃ y, !φ x y) → ∀ X, ∃ Y, ∀ x ∈ X, ∃ y ∈ Y, !φ x y”
+
 /-- Axiom schema of replacement. -/
 def replacementSchema (φ : SyntacticSemiformula ℒₛₑₜ 2) : Sentence ℒₛₑₜ :=
   .univCl “(∀ x, ∃! y, !φ x y) → ∀ X, ∃ Y, ∀ y, y ∈ Y ↔ ∃ x ∈ X, !φ x y”
@@ -63,7 +71,7 @@ def choice : Sentence ℒₛₑₜ :=
 
 end Axiom
 
-/-! ### Zermelo set theory-/
+/-! ### Zermelo set theory -/
 
 /-- Zermelo set theory. -/
 inductive Zermelo : Theory ℒₛₑₜ

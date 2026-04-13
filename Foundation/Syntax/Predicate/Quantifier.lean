@@ -176,8 +176,10 @@ def ball [UnivQuantifier α] [Arrow (α (n + 1))] (φ : α (n + 1)) (ψ : α (n 
 
 def bexs [ExsQuantifier α] [Wedge (α (n + 1))] (φ : α (n + 1)) (ψ : α (n + 1)) : α n := ∃⁰ (φ ⋏ ψ)
 
+/-- Universal quantifier bounded by a predicate: `"∀⁰[ φ ] ψ` means `∀⁰ (φ ➝ ψ)`. -/
 notation:64 "∀⁰[" φ "] " ψ => ball φ ψ
 
+/-- Existential quantifier bounded by a predicate: `"∃⁰[ φ ] ψ` means `∃⁰ (φ ⋏ ψ)`. -/
 notation:64 "∃⁰[" φ "] " ψ => bexs φ ψ
 
 end quantifier

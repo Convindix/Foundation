@@ -1,16 +1,11 @@
 module
 
-public import Foundation.FirstOrder.SetTheory.Basic.Model
+public import Foundation.FirstOrder.Arithmetic.Basic.Model
 
 @[expose] public section
-/-!
-# Generalized arithmetical/Lévy hierarchy, where quantifiers can be bounded by any operator `R`
-TODO: Replace the arithmetical hierarchy with this one
--/
+namespace LO.FirstOrder.Arithmetic
 
-namespace LO.FirstOrder.SetTheory
-
-variable {L : Language} {R : LO.FirstOrder.Semiformula.Operator L 2}
+variable {L : Language} [L.LT]
 
 inductive Hierarchy : Polarity → ℕ → {n : ℕ} → Semiformula L ξ n → Prop
   | verum (Γ s n) : Hierarchy Γ s (⊤ : Semiformula L ξ n)
@@ -20,9 +15,9 @@ inductive Hierarchy : Polarity → ℕ → {n : ℕ} → Semiformula L ξ n → 
   | and {Γ s n} {φ ψ : Semiformula L ξ n} : Hierarchy Γ s φ → Hierarchy Γ s ψ → Hierarchy Γ s (φ ⋏ ψ)
   | or {Γ s n} {φ ψ : Semiformula L ξ n} : Hierarchy Γ s φ → Hierarchy Γ s ψ → Hierarchy Γ s (φ ⋎ ψ)
   | ball {Γ s n} {φ : Semiformula L ξ (n + 1)} {t : Semiterm L ξ (n + 1)} :
-    t.Positive → Hierarchy Γ s φ → Hierarchy Γ s (∀⁰[R.operator ![#0, t]] φ)
+    t.Positive → Hierarchy Γ s φ → Hierarchy Γ s (∀⁰[“x. x < !!t”] φ)
   | bexs {Γ s n} {φ : Semiformula L ξ (n + 1)} {t : Semiterm L ξ (n + 1)} :
-    t.Positive → Hierarchy Γ s φ → Hierarchy Γ s (∃⁰[R.operator ![#0, t]] φ)
+    t.Positive → Hierarchy Γ s φ → Hierarchy Γ s (∃⁰[“x. x < !!t”] φ)
   | exs {s n} {φ : Semiformula L ξ (n + 1)} : Hierarchy 𝚺 (s + 1) φ → Hierarchy 𝚺 (s + 1) (∃⁰ φ)
   | all {s n} {φ : Semiformula L ξ (n + 1)} : Hierarchy 𝚷 (s + 1) φ → Hierarchy 𝚷 (s + 1) (∀⁰ φ)
   | sigma {s n} {φ : Semiformula L ξ (n + 1)} : Hierarchy 𝚷 s φ → Hierarchy 𝚺 (s + 1) (∃⁰ φ)
@@ -30,14 +25,14 @@ inductive Hierarchy : Polarity → ℕ → {n : ℕ} → Semiformula L ξ n → 
   | dummy_sigma {s n} {φ : Semiformula L ξ (n + 1)} : Hierarchy 𝚷 (s + 1) φ → Hierarchy 𝚺 (s + 1 + 1) (∀⁰ φ)
   | dummy_pi {s n} {φ : Semiformula L ξ (n + 1)} : Hierarchy 𝚺 (s + 1) φ → Hierarchy 𝚷 (s + 1 + 1) (∃⁰ φ)
 
-def DeltaZero (φ : Semiformula L ξ n) : Prop := Hierarchy (R := R) 𝚺 0 φ
+def DeltaZero (φ : Semiformula L ξ n) : Prop := Hierarchy 𝚺 0 φ
 
 attribute [simp] Hierarchy.verum Hierarchy.falsum Hierarchy.rel Hierarchy.nrel
 
 namespace Hierarchy
 
 set_option linter.flexible false in
-@[simp] lemma and_iff {φ ψ : Semiformula L ξ n} : Hierarchy (R := R) Γ s (φ ⋏ ψ) ↔ Hierarchy (R := R) Γ s φ ∧ Hierarchy (R := R) Γ s ψ :=
+@[simp] lemma and_iff {φ ψ : Semiformula L ξ n} : Hierarchy Γ s (φ ⋏ ψ) ↔ Hierarchy Γ s φ ∧ Hierarchy Γ s ψ :=
   ⟨by generalize hr : φ ⋏ ψ = r
       intro H
       induction H <;> try simp [LO.FirstOrder.ball, LO.FirstOrder.bexs] at hr
@@ -47,7 +42,7 @@ set_option linter.flexible false in
    by rintro ⟨hp, hq⟩; exact Hierarchy.and hp hq⟩
 
 set_option linter.flexible false in
-@[simp] lemma or_iff {φ ψ : Semiformula L ξ n} : Hierarchy (R := R) Γ s (φ ⋎ ψ) ↔ Hierarchy (R := R) Γ s φ ∧ Hierarchy (R := R) Γ s ψ :=
+@[simp] lemma or_iff {φ ψ : Semiformula L ξ n} : Hierarchy Γ s (φ ⋎ ψ) ↔ Hierarchy Γ s φ ∧ Hierarchy Γ s ψ :=
   ⟨by generalize hr : φ ⋎ ψ = r
       intro H
       induction H <;> try simp [LO.FirstOrder.ball, LO.FirstOrder.bexs] at hr
@@ -58,13 +53,13 @@ set_option linter.flexible false in
 
 set_option linter.flexible false in
 @[simp] lemma conj_iff {φ : Fin m → Semiformula L ξ n} :
-    Hierarchy (R := R) Γ s (Matrix.conj φ) ↔ ∀ i, Hierarchy (R := R) Γ s (φ i) := by
+    Hierarchy Γ s (Matrix.conj φ) ↔ ∀ i, Hierarchy Γ s (φ i) := by
   induction m <;> simp [Matrix.conj, Matrix.vecTail, *]
   · exact ⟨by rintro ⟨hz, hs⟩ i; cases i using Fin.cases <;> simp [*],
            by intro h; exact ⟨h 0, fun _ => h _⟩⟩
 
 set_option linter.flexible false in
-lemma zero_eq_alt {φ : Semiformula L ξ n} : Hierarchy (R := R) Γ 0 φ → Hierarchy (R := R) Γ.alt 0 φ := by
+lemma zero_eq_alt {φ : Semiformula L ξ n} : Hierarchy Γ 0 φ → Hierarchy Γ.alt 0 φ := by
   generalize hz : 0 = z
   rw [eq_comm] at hz
   intro h
@@ -75,16 +70,16 @@ lemma zero_eq_alt {φ : Semiformula L ξ n} : Hierarchy (R := R) Γ 0 φ → Hie
   case ball pos _ ih => exact ball pos (ih hz)
   case bexs pos _ ih => exact bexs pos (ih hz)
 
-lemma pi_zero_iff_sigma_zero {φ : Semiformula L ξ n} : Hierarchy (R := R) 𝚷 0 φ ↔ Hierarchy (R := R) 𝚺 0 φ := ⟨zero_eq_alt, zero_eq_alt⟩
+lemma pi_zero_iff_sigma_zero {φ : Semiformula L ξ n} : Hierarchy 𝚷 0 φ ↔ Hierarchy 𝚺 0 φ := ⟨zero_eq_alt, zero_eq_alt⟩
 
-lemma zero_iff {Γ Γ'} {φ : Semiformula L ξ n} : Hierarchy (R := R) Γ 0 φ ↔ Hierarchy (R := R) Γ' 0 φ := by rcases Γ <;> rcases Γ' <;> simp [pi_zero_iff_sigma_zero]
+lemma zero_iff {Γ Γ'} {φ : Semiformula L ξ n} : Hierarchy Γ 0 φ ↔ Hierarchy Γ' 0 φ := by rcases Γ <;> rcases Γ' <;> simp [pi_zero_iff_sigma_zero]
 
-lemma zero_iff_delta_zero {Γ} {φ : Semiformula L ξ n} : Hierarchy (R := R) Γ 0 φ ↔ DeltaZero (R := R) φ := by
+lemma zero_iff_delta_zero {Γ} {φ : Semiformula L ξ n} : Hierarchy Γ 0 φ ↔ DeltaZero φ := by
   simpa [DeltaZero, pi_zero_iff_sigma_zero] using zero_iff
 
-@[simp] lemma alt_zero_iff_zero {φ : Semiformula L ξ n} : Hierarchy (R := R) Γ.alt 0 φ ↔ Hierarchy (R := R) Γ 0 φ := by rcases Γ <;> simp [pi_zero_iff_sigma_zero]
+@[simp] lemma alt_zero_iff_zero {φ : Semiformula L ξ n} : Hierarchy Γ.alt 0 φ ↔ Hierarchy Γ 0 φ := by rcases Γ <;> simp [pi_zero_iff_sigma_zero]
 
-lemma accum {Γ} {s : ℕ} {φ : Semiformula L ξ n} : Hierarchy (R := R) Γ s φ → ∀ Γ', Hierarchy (R := R) Γ' (s + 1) φ
+lemma accum {Γ} {s : ℕ} {φ : Semiformula L ξ n} : Hierarchy Γ s φ → ∀ Γ', Hierarchy Γ' (s + 1) φ
   |    verum _ _ _, _ => verum _ _ _
   |   falsum _ _ _, _ => falsum _ _ _
   |    rel _ _ r v, _ => rel _ _ r v
@@ -92,7 +87,7 @@ lemma accum {Γ} {s : ℕ} {φ : Semiformula L ξ n} : Hierarchy (R := R) Γ s �
   |      and hp hq, _ => and (hp.accum _) (hq.accum _)
   |       or hp hq, _ => or (hp.accum _) (hq.accum _)
   |    ball pos hp, _ => ball pos (hp.accum _)
-  |    bexs pos hp, _ => bexs pos (hp.accum _)
+  |     bexs pos hp, _ => bexs pos (hp.accum _)
   |         all hp, Γ => by
     cases Γ
     · exact hp.dummy_sigma
@@ -118,41 +113,44 @@ lemma accum {Γ} {s : ℕ} {φ : Semiformula L ξ n} : Hierarchy (R := R) Γ s �
     · exact ((hp.accum 𝚺).accum 𝚺).exs
     · exact (hp.accum 𝚺).dummy_pi
 
-lemma strict_mono {Γ s} {φ : Semiformula L ξ n} (hp : Hierarchy (R := R) Γ s φ) (Γ') {s'} (h : s < s') : Hierarchy (R := R) Γ' s' φ := by
-  have : ∀ d, Hierarchy (R := R) Γ' (s + d + 1) φ := by
+lemma strict_mono {Γ s} {φ : Semiformula L ξ n} (hp : Hierarchy Γ s φ) (Γ') {s'} (h : s < s') : Hierarchy Γ' s' φ := by
+  have : ∀ d, Hierarchy Γ' (s + d + 1) φ := by
     intro d
     induction' d with s ih
     · simpa using hp.accum Γ'
     · simpa only [Nat.add_succ, add_zero] using ih.accum _
   simpa [show s + (s' - s.succ) + 1 = s' from by simpa [Nat.succ_add] using Nat.add_sub_of_le h] using this (s' - s.succ)
 
-lemma mono {Γ} {s s' : ℕ} {φ : Semiformula L ξ n} (hp : Hierarchy (R := R) Γ s φ) (h : s ≤ s') : Hierarchy (R := R) Γ s' φ := by
+lemma mono {Γ} {s s' : ℕ} {φ : Semiformula L ξ n} (hp : Hierarchy Γ s φ) (h : s ≤ s') : Hierarchy Γ s' φ := by
   rcases Nat.lt_or_eq_of_le h with (lt | rfl)
   · exact hp.strict_mono Γ lt
   · assumption
 
-lemma of_zero {b b'} {s : ℕ} {φ : Semiformula L ξ n} (hp : Hierarchy (R := R) b 0 φ) : Hierarchy (R := R) b' s φ := by
+lemma of_zero {b b'} {s : ℕ} {φ : Semiformula L ξ n} (hp : Hierarchy b 0 φ) : Hierarchy b' s φ := by
   rcases Nat.eq_or_lt_of_le (Nat.zero_le s) with (rfl | pos)
   · exact zero_iff.mp hp
   · exact strict_mono hp b' pos
 
 section
 
-variable {L : Language} {R : LO.FirstOrder.Semiformula.Operator L 2}
+variable {L : Language}
 
-@[simp] lemma equal [L.Eq] {t u : Semiterm L ξ n} : Hierarchy (R := R) Γ s “!!t = !!u” := by
+@[simp] lemma equal [L.Eq] [L.LT] {t u : Semiterm L ξ n} : Hierarchy Γ s “!!t = !!u” := by
   simp [Semiformula.Operator.operator, Matrix.fun_eq_vec_two,
     Semiformula.Operator.Eq.sentence_eq]
 
-@[simp] lemma operator {t u : Semiterm L ξ (n + 1)} (ht : t.Positive) : Hierarchy (R := R) Γ s (R.operator ![#0, t]) := by
-  -- TODO: The generalized equivalent of `equal` becomes false for operators in general...
-  -- simp [Semiformula.Operator.operator, Rewriting.subst, Rewriting.app]
-  sorry
+@[simp] lemma lt [L.LT] {t u : Semiterm L ξ n} : Hierarchy Γ s “!!t < !!u” := by
+  simp [Semiformula.Operator.operator, Matrix.fun_eq_vec_two, Semiformula.Operator.LT.sentence_eq]
+
+@[simp] lemma le [L.Eq] [L.LT] {t u : Semiterm L ξ n} : Hierarchy Γ s “!!t ≤ !!u” := by
+  simp [Semiformula.Operator.operator, Matrix.fun_eq_vec_two,
+    Semiformula.Operator.Eq.sentence_eq, Semiformula.Operator.LT.sentence_eq,
+    Semiformula.Operator.LE.sentence_eq]
 
 end
 
 set_option linter.flexible false in
-lemma neg {φ : Semiformula L ξ n} : Hierarchy (R := R) Γ s φ → Hierarchy (R := R) Γ.alt s (∼φ) := by
+lemma neg {φ : Semiformula L ξ n} : Hierarchy Γ s φ → Hierarchy Γ.alt s (∼φ) := by
   intro h; induction h <;> try simp [*]
   case bexs pos _ ih => exact ball pos ih
   case ball pos _ ih => exact bexs pos ih
@@ -163,95 +161,101 @@ lemma neg {φ : Semiformula L ξ n} : Hierarchy (R := R) Γ s φ → Hierarchy (
   case dummy_pi ih => exact dummy_sigma ih
   case dummy_sigma ih => exact dummy_pi ih
 
-@[simp] lemma neg_iff {φ : Semiformula L ξ n} : Hierarchy (R := R) Γ s (∼φ) ↔ Hierarchy (R := R) Γ.alt s φ :=
+@[simp] lemma neg_iff {φ : Semiformula L ξ n} : Hierarchy Γ s (∼φ) ↔ Hierarchy Γ.alt s φ :=
   ⟨fun h => by simpa using neg h, fun h => by simpa using neg h⟩
 
-@[simp] lemma imp_iff {φ ψ : Semiformula L ξ n} : Hierarchy (R := R) Γ s (φ ➝ ψ) ↔ (Hierarchy (R := R) Γ.alt s φ ∧ Hierarchy (R := R) Γ s ψ) := by simp [Semiformula.imp_eq]
+@[simp] lemma imp_iff {φ ψ : Semiformula L ξ n} : Hierarchy Γ s (φ ➝ ψ) ↔ (Hierarchy Γ.alt s φ ∧ Hierarchy Γ s ψ) := by simp [Semiformula.imp_eq]
 
 set_option linter.flexible false in
 @[simp] lemma ball_iff {Γ s n} {φ : Semiformula L ξ (n + 1)} {t : Semiterm L ξ (n + 1)} (ht : t.Positive) :
-    Hierarchy (R := R) Γ s (∀⁰[R.operator ![#0, t]] φ) ↔ Hierarchy (R := R) Γ s φ :=
-  ⟨by generalize hq : (∀⁰[R.operator ![#0, t]] φ) = ψ
+    Hierarchy Γ s (∀⁰[“x. x < !!t”] φ) ↔ Hierarchy Γ s φ :=
+  ⟨by generalize hq : (∀⁰[“x. x < !!t”] φ) = ψ
       intro H
       induction H <;> try simp [LO.FirstOrder.ball, LO.FirstOrder.bexs] at hq
       case ball φ t pt hp ih =>
-        rcases hq with ⟨assumption, rfl⟩
+        rcases hq with ⟨rfl, rfl⟩
         assumption
       case all hp ih =>
         rcases hq with rfl
-        simp_all only [imp_iff, Polarity.alt_pi, Matrix.vecCons_empty_eq_singleton]
+        simpa using hp
       case pi s _ _ hp ih =>
         rcases hq with rfl
-        exact (show Hierarchy 𝚺 s φ from by simp_all only [imp_iff, Polarity.alt_sigma, Matrix.vecCons_empty_eq_singleton]).accum _
+        exact (show Hierarchy 𝚺 s φ from by simpa using hp).accum _
       case dummy_sigma hp _ =>
         rcases hq with rfl
         simp at hp
-        exact hp.2.accum _,
+        exact hp.accum _,
    by intro hp; exact hp.ball ht⟩
 
 set_option linter.flexible false in
 @[simp] lemma bexs_iff {Γ s n} {φ : Semiformula L ξ (n + 1)} {t : Semiterm L ξ (n + 1)} (ht : t.Positive) :
-    Hierarchy (R := R) Γ s (∃⁰[R.operator ![#0, t]] φ) ↔ Hierarchy (R := R) Γ s φ :=
-  ⟨by generalize hq : (∃⁰[R.operator ![#0, t]] φ) = ψ
+    Hierarchy Γ s (∃⁰[“x. x < !!t”] φ) ↔ Hierarchy Γ s φ :=
+  ⟨by generalize hq : (∃⁰[“x. x < !!t”] φ) = ψ
       intro H
       induction H <;> try simp [LO.FirstOrder.ball, LO.FirstOrder.bexs] at hq
       case bexs φ t pt hp ih =>
-        rcases hq with ⟨assumption, rfl⟩
+        rcases hq with ⟨rfl, rfl⟩
         assumption
       case exs hp ih =>
         rcases hq with rfl
-        simp_all only [and_iff, Matrix.vecCons_empty_eq_singleton]
+        simpa using hp
       case sigma s _ _ hp ih =>
         rcases hq with rfl
-        exact (show Hierarchy 𝚷 s φ from by simp_all only [and_iff, Matrix.vecCons_empty_eq_singleton]).accum _
+        exact (show Hierarchy 𝚷 s φ from by simpa using hp).accum _
       case dummy_pi hp _ =>
         rcases hq with rfl
         simp at hp
-        exact hp.2.accum _,
+        exact hp.accum _,
    by intro hp; exact hp.bexs ht⟩
 
-@[simp] lemma ballOperator_iff {Γ s n} {φ : Semiformula L ξ (n + 1)} {t : Semiterm L ξ n} :
-    Hierarchy (R := R) Γ s (φ.ballOperator (R := R) t) ↔ Hierarchy (R := R) Γ s φ := by simp [Semiformula.ballOperator]
+@[simp] lemma ballLT_iff {Γ s n} {φ : Semiformula L ξ (n + 1)} {t : Semiterm L ξ n} :
+    Hierarchy Γ s (φ.ballLT t) ↔ Hierarchy Γ s φ := by simp [Semiformula.ballLT]
 
-@[simp] lemma bexsOperator_iff {Γ s n} {φ : Semiformula L ξ (n + 1)} {t : Semiterm L ξ n} :
-    Hierarchy (R := R) Γ s (φ.bexsOperator (R := R) t) ↔ Hierarchy (R := R) Γ s φ := by simp [Semiformula.bexsOperator]
+@[simp] lemma bexsLT_iff {Γ s n} {φ : Semiformula L ξ (n + 1)} {t : Semiterm L ξ n} :
+    Hierarchy Γ s (φ.bexsLT t) ↔ Hierarchy Γ s φ := by simp [Semiformula.bexsLT]
+
+@[simp] lemma ballLTSucc_iff [L.Zero] [L.One] [L.Add] {Γ s n} {φ : Semiformula L ξ (n + 1)} {t : Semiterm L ξ n} :
+    Hierarchy Γ s (φ.ballLTSucc t) ↔ Hierarchy Γ s φ := by simp [Semiformula.ballLTSucc]
+
+@[simp] lemma bexsLTSucc_iff [L.Zero] [L.One] [L.Add] {Γ s n} {φ : Semiformula L ξ (n + 1)} {t : Semiterm L ξ n} :
+    Hierarchy Γ s (φ.bexsLTSucc t) ↔ Hierarchy Γ s φ := by simp [Semiformula.bexsLTSucc]
 
 set_option linter.flexible false in
-lemma pi_of_pi_all {φ : Semiformula L ξ (n + 1)} : Hierarchy (R := R) 𝚷 s (∀⁰ φ) → Hierarchy (R := R) 𝚷 s φ := by
+lemma pi_of_pi_all {φ : Semiformula L ξ (n + 1)} : Hierarchy 𝚷 s (∀⁰ φ) → Hierarchy 𝚷 s φ := by
   generalize hr : ∀⁰ φ = r
   generalize hb : (𝚷 : Polarity) = Γ
   intro H
   cases H <;> try simp [LO.FirstOrder.ball, LO.FirstOrder.bexs] at hr
-  case ball => rcases hr with rfl; simpa
+  case ball => rcases hr with rfl; simpa only [imp_iff, lt, true_and]
   case all => rcases hr with rfl; simpa
   case pi hp => rcases hr with rfl; exact hp.accum _
   case dummy_sigma hp => rcases hr with rfl; exact hp.accum _
 
-@[simp] lemma all_iff {φ : Semiformula L ξ (n + 1)} : Hierarchy (R := R) 𝚷 (s + 1) (∀⁰ φ) ↔ Hierarchy (R := R) 𝚷 (s + 1) φ :=
+@[simp] lemma all_iff {φ : Semiformula L ξ (n + 1)} : Hierarchy 𝚷 (s + 1) (∀⁰ φ) ↔ Hierarchy 𝚷 (s + 1) φ :=
   ⟨pi_of_pi_all, all⟩
 
-@[simp] lemma allItr_iff {φ : Semiformula L ξ (n + k)} : Hierarchy (R := R) 𝚷 (s + 1) (∀⁰^[k] φ) ↔ Hierarchy (R := R) 𝚷 (s + 1) φ := by
+@[simp] lemma allItr_iff {φ : Semiformula L ξ (n + k)} : Hierarchy 𝚷 (s + 1) (∀⁰^[k] φ) ↔ Hierarchy 𝚷 (s + 1) φ := by
   induction k <;> simp [allItr_succ, *]
 
 set_option linter.flexible false in
-lemma sigma_of_sigma_exs {φ : Semiformula L ξ (n + 1)} : Hierarchy (R := R) 𝚺 s (∃⁰ φ) → Hierarchy (R := R) 𝚺 s φ := by
+lemma sigma_of_sigma_ex {φ : Semiformula L ξ (n + 1)} : Hierarchy 𝚺 s (∃⁰ φ) → Hierarchy 𝚺 s φ := by
   generalize hr : ∃⁰ φ = r
   generalize hb : (𝚺 : Polarity) = Γ
   intro H
   cases H <;> try simp [LO.FirstOrder.ball, LO.FirstOrder.bexs] at hr
-  case bexs => rcases hr with rfl; rename Semiterm L ξ (n + 1) => t; rename t.Positive => hp; simp only [and_iff]; rw [(eq_true (operator hp) : Hierarchy Γ s (R.operator ![#0, t]) = True)] <;> simpa
+  case bexs => rcases hr with rfl; simpa
   case exs => rcases hr with rfl; simpa
   case sigma hp => rcases hr with rfl; exact hp.accum _
   case dummy_pi hp => rcases hr with rfl; exact hp.accum _
 
-@[simp] lemma sigma_iff {φ : Semiformula L ξ (n + 1)} : Hierarchy (R := R) 𝚺 (s + 1) (∃⁰ φ) ↔ Hierarchy (R := R) 𝚺 (s + 1) φ :=
-  ⟨sigma_of_sigma_exs, exs⟩
+@[simp] lemma sigma_iff {φ : Semiformula L ξ (n + 1)} : Hierarchy 𝚺 (s + 1) (∃⁰ φ) ↔ Hierarchy 𝚺 (s + 1) φ :=
+  ⟨sigma_of_sigma_ex, exs⟩
 
-@[simp] lemma exsItr_iff {φ : Semiformula L ξ (n + k)} : Hierarchy (R := R) 𝚺 (s + 1) (∃⁰^[k] φ) ↔ Hierarchy (R := R) 𝚺 (s + 1) φ := by
+@[simp] lemma exsItr_iff {φ : Semiformula L ξ (n + k)} : Hierarchy 𝚺 (s + 1) (∃⁰^[k] φ) ↔ Hierarchy 𝚺 (s + 1) φ := by
   induction k <;> simp [exsItr_succ, *]
 
 set_option linter.flexible false in
-lemma rew (ω : Rew L ξ₁ n₁ ξ₂ n₂) {φ : Semiformula L ξ₁ n₁} : Hierarchy (R := R) Γ s φ → Hierarchy (R := R) Γ s (ω ▹ φ) := by
+lemma rew (ω : Rew L ξ₁ n₁ ξ₂ n₂) {φ : Semiformula L ξ₁ n₁} : Hierarchy Γ s φ → Hierarchy Γ s (ω ▹ φ) := by
   intro h; induction h generalizing n₂ <;> try simp [*, Semiformula.rew_rel, Semiformula.rew_nrel]
   case sigma ih => exact (ih _).accum _
   case pi ih => exact (ih _).accum _
@@ -260,7 +264,7 @@ lemma rew (ω : Rew L ξ₁ n₁ ξ₂ n₂) {φ : Semiformula L ξ₁ n₁} : H
 
 set_option linter.flexible false in
 @[simp] lemma rew_iff {ω : Rew L ξ₁ n₁ ξ₂ n₂} {φ : Semiformula L ξ₁ n₁} :
-    Hierarchy (R := R) Γ s (ω ▹ φ) ↔ Hierarchy (R := R) Γ s φ := by
+    Hierarchy Γ s (ω ▹ φ) ↔ Hierarchy Γ s φ := by
   constructor
   · generalize eq : ω ▹ φ = ψ
     intro hq
@@ -280,12 +284,12 @@ set_option linter.flexible false in
       rcases eq with ⟨φ₁, rfl, φ₂, rfl, rfl⟩
       simpa using ⟨ihp rfl, ihq rfl⟩
     case ball pos _ ih =>
-      simp only [Rew.eq_mem_iff, Rew.q_eq_zero_iff, Matrix.vecCons_empty_eq_singleton,
+      simp only [Rew.eq_lt_iff, Rew.q_eq_zero_iff, Matrix.vecCons_empty_eq_singleton,
         exists_and_left, exists_eq_left] at eq
       rcases eq with ⟨hp, ⟨u, rfl, s, hs, rfl⟩, φ, rfl, rfl⟩
       simpa [show u.Positive from by simpa using pos] using ih rfl
     case bexs pos _ ih =>
-      simp only [Rew.eq_mem_iff, Rew.q_eq_zero_iff, Matrix.vecCons_empty_eq_singleton,
+      simp only [Rew.eq_lt_iff, Rew.q_eq_zero_iff, Matrix.vecCons_empty_eq_singleton,
         exists_and_left, exists_eq_left] at eq
       rcases eq with ⟨hp, ⟨u, rfl, s, hs, rfl⟩, φ, rfl, rfl⟩
       simpa [show u.Positive from by simpa using pos] using ih rfl
@@ -309,48 +313,48 @@ set_option linter.flexible false in
       exact (ih rfl).dummy_pi
   · exact rew _
 
-lemma exsClosure : {n : ℕ} → {φ : Semiformula L ξ n} → Hierarchy (R := R) 𝚺 (s + 1) φ → Hierarchy (R := R) 𝚺 (s + 1) (exsClosure φ)
+lemma exsClosure : {n : ℕ} → {φ : Semiformula L ξ n} → Hierarchy 𝚺 (s + 1) φ → Hierarchy 𝚺 (s + 1) (exsClosure φ)
   | 0, _, hp => hp
   | n + 1, φ, hp => by simpa using exsClosure (hp.exs)
 
-instance : LogicalConnective.AndOrClosed (Hierarchy (R := R) Γ s : Semiformula L ξ k → Prop) where
+instance : LogicalConnective.AndOrClosed (Hierarchy Γ s : Semiformula L ξ k → Prop) where
   verum := verum _ _ _
   falsum := falsum _ _ _
   and := and
   or := or
 
-instance : LogicalConnective.Closed (Hierarchy (R := R) Γ 0 : Semiformula L ξ k → Prop) where
+instance : LogicalConnective.Closed (Hierarchy Γ 0 : Semiformula L ξ k → Prop) where
   not := by simp [neg_iff]
   imply := by simp [Semiformula.imp_eq, neg_iff]; tauto
 
 set_option linter.flexible false in
-lemma of_open {φ : Semiformula L ξ n} : φ.Open → Hierarchy (R := R) Γ s φ := by
+lemma of_open {φ : Semiformula L ξ n} : φ.Open → Hierarchy Γ s φ := by
   induction φ using Semiformula.rec' <;> simp
   case hand ihp ihq => intro hp hq; exact ⟨ihp hp, ihq hq⟩
   case hor ihp ihq => intro hp hq; exact ⟨ihp hp, ihq hq⟩
 
-variable {L : Language} {R : LO.FirstOrder.Semiformula.Operator L 2}
+variable {L : Language} [L.ORing]
 
 lemma iff_iff {φ ψ : Semiformula L ξ n} :
-    Hierarchy (R := R) b s (φ ⭤ ψ) ↔ (Hierarchy (R := R) b s φ ∧ Hierarchy (R := R) b.alt s φ ∧ Hierarchy (R := R) b s ψ ∧ Hierarchy (R := R) b.alt s ψ) := by
+    Hierarchy b s (φ ⭤ ψ) ↔ (Hierarchy b s φ ∧ Hierarchy b.alt s φ ∧ Hierarchy b s ψ ∧ Hierarchy b.alt s ψ) := by
   simp [Semiformula.iff_eq]; tauto
 
 @[simp] lemma iff_iff₀ {φ ψ : Semiformula L ξ n} :
-    Hierarchy (R := R) b 0 (φ ⭤ ψ) ↔ (Hierarchy (R := R) b 0 φ ∧ Hierarchy (R := R) b 0 ψ) := by
+    Hierarchy b 0 (φ ⭤ ψ) ↔ (Hierarchy b 0 φ ∧ Hierarchy b 0 ψ) := by
   simp [Semiformula.iff_eq]; tauto
 
 @[simp] lemma matrix_conj_iff {b s n} {φ : Fin m → Semiformula L ξ n} :
-    Hierarchy (R := R) b s (Matrix.conj fun j ↦ φ j) ↔ ∀ j, Hierarchy (R := R) b s (φ j) := by
+    Hierarchy b s (Matrix.conj fun j ↦ φ j) ↔ ∀ j, Hierarchy b s (φ j) := by
   cases m <;> simp
 
-lemma remove_forall {φ : Semiformula L ξ (n + 1)} : Hierarchy (R := R) b s (∀⁰ φ) → Hierarchy (R := R) b s φ := by
+lemma remove_forall {φ : Semiformula L ξ (n + 1)} : Hierarchy b s (∀⁰ φ) → Hierarchy b s φ := by
   intro h; rcases h
   case ball => simpa
   case all => assumption
   case pi h => exact h.accum _
   case dummy_sigma h => exact h.accum _
 
-lemma remove_exists {φ : Semiformula L ξ (n + 1)} : Hierarchy (R := R) b s (∃⁰ φ) → Hierarchy (R := R) b s φ := by
+lemma remove_exists {φ : Semiformula L ξ (n + 1)} : Hierarchy b s (∃⁰ φ) → Hierarchy b s φ := by
   intro h; rcases h
   case bexs => simpa
   case exs => assumption
@@ -358,51 +362,51 @@ lemma remove_exists {φ : Semiformula L ξ (n + 1)} : Hierarchy (R := R) b s (�
   case dummy_pi h => exact h.accum _
 
 @[simp] lemma padding_iff {Γ s n} {φ : Semiformula L ξ n} :
-    Hierarchy (R := R) Γ s (φ.padding k) ↔ Hierarchy (R := R) Γ s φ := by
+    Hierarchy Γ s (φ.padding k) ↔ Hierarchy Γ s φ := by
   simp only [Semiformula.padding, and_iff, and_iff_left_iff_imp]
   intro h
   induction k <;> simp [List.replicate_succ, *]
 
 @[simp] lemma list_conj₂_iff {Γ s n} {l : List (Semiformula L ξ n)} :
-    Hierarchy (R := R) Γ s (⋀l) ↔ ∀ φ ∈ l, Hierarchy (R := R) Γ s φ := by
+    Hierarchy Γ s (⋀l) ↔ ∀ φ ∈ l, Hierarchy Γ s φ := by
   match l with
   |          [] => simp
   |         [_] => simp
   | ψ :: χ :: l => simp [list_conj₂_iff (l := χ :: l)]
 
 @[simp] lemma list_disj₂_iff {Γ s n} {l : List (Semiformula L ξ n)} :
-    Hierarchy (R := R) Γ s (⋁l) ↔ ∀ φ ∈ l, Hierarchy (R := R) Γ s φ := by
+    Hierarchy Γ s (⋁l) ↔ ∀ φ ∈ l, Hierarchy Γ s φ := by
   match l with
   |          [] => simp
   |         [_] => simp
   | ψ :: χ :: l => simp [list_disj₂_iff (l := χ :: l)]
 
 @[simp] lemma list_conj'_iff {Γ s n} {l : List ι} {φ : ι → Semiformula L ξ n} :
-    Hierarchy (R := R) Γ s (l.conj' φ) ↔ ∀ i ∈ l, Hierarchy (R := R) Γ s (φ i) := by simp [List.conj']
+    Hierarchy Γ s (l.conj' φ) ↔ ∀ i ∈ l, Hierarchy Γ s (φ i) := by simp [List.conj']
 
 @[simp] lemma list_disj'_iff {Γ s n} {l : List ι} {φ : ι → Semiformula L ξ n} :
-    Hierarchy (R := R) Γ s (l.disj' φ) ↔ ∀ i ∈ l, Hierarchy (R := R) Γ s (φ i) := by simp [List.disj']
+    Hierarchy Γ s (l.disj' φ) ↔ ∀ i ∈ l, Hierarchy Γ s (φ i) := by simp [List.disj']
 
 @[simp] lemma finset_conj'_iff {Γ s n} {t : Finset ι} {φ : ι → Semiformula L ξ n} :
-    Hierarchy (R := R) Γ s (t.conj' φ) ↔ ∀ i ∈ t, Hierarchy (R := R) Γ s (φ i) := by simp [Finset.conj']
+    Hierarchy Γ s (t.conj' φ) ↔ ∀ i ∈ t, Hierarchy Γ s (φ i) := by simp [Finset.conj']
 
 @[simp] lemma finset_disj'_iff {Γ s n} {t : Finset ι} {φ : ι → Semiformula L ξ n} :
-    Hierarchy (R := R) Γ s (t.disj' φ) ↔ ∀ i ∈ t, Hierarchy (R := R) Γ s (φ i) := by simp [Finset.disj']
+    Hierarchy Γ s (t.disj' φ) ↔ ∀ i ∈ t, Hierarchy Γ s (φ i) := by simp [Finset.disj']
 
 @[simp] lemma finset_uconj_iff {Γ s n} [Fintype ι] {φ : ι → Semiformula L ξ n} :
-    Hierarchy (R := R) Γ s (Finset.uconj φ) ↔ ∀ i, Hierarchy (R := R) Γ s (φ i) := by simp [Finset.uconj]
+    Hierarchy Γ s (Finset.uconj φ) ↔ ∀ i, Hierarchy Γ s (φ i) := by simp [Finset.uconj]
 
 @[simp] lemma finset_udisj_iff {Γ s n} [Fintype ι] {φ : ι → Semiformula L ξ n} :
-    Hierarchy (R := R) Γ s (Finset.udisj φ) ↔ ∀ i, Hierarchy (R := R) Γ s (φ i) := by simp [Finset.udisj]
+    Hierarchy Γ s (Finset.udisj φ) ↔ ∀ i, Hierarchy Γ s (φ i) := by simp [Finset.udisj]
 
 @[simp] lemma exsItr {n k} {φ : Semiformula L ξ (n + k)} :
-    Hierarchy (R := R) 𝚺 (s + 1) (∃⁰^[k] φ) ↔ Hierarchy (R := R) 𝚺 (s + 1) φ := by
+    Hierarchy 𝚺 (s + 1) (∃⁰^[k] φ) ↔ Hierarchy 𝚺 (s + 1) φ := by
   match k with
   |     0 => simp
   | k + 1 => simp [LO.FirstOrder.exsItr_succ, exsItr]
 
 @[simp] lemma allItr {n k} {φ : Semiformula L ξ (n + k)} :
-    Hierarchy (R := R) 𝚷 (s + 1) (∀⁰^[k] φ) ↔ Hierarchy (R := R) 𝚷 (s + 1) φ := by
+    Hierarchy 𝚷 (s + 1) (∀⁰^[k] φ) ↔ Hierarchy 𝚷 (s + 1) φ := by
   match k with
   |     0 => simp
   | k + 1 => simp [LO.FirstOrder.allItr_succ, allItr]
@@ -411,57 +415,74 @@ end Hierarchy
 
 section LOR
 
-lemma sigma₁_induction {P : (n : ℕ) → Semiformula L ξ n → Prop}
+lemma sigma₁_induction {P : (n : ℕ) → Semiformula ℒₒᵣ ξ n → Prop}
     (hVerum : ∀ n, P n ⊤)
     (hFalsum : ∀ n, P n ⊥)
-    (hRel : ∀ n, P n sorry)
-    (hNrel : ∀ n, P n sorry)
-    (hAnd : ∀ n φ ψ, Hierarchy (R := R) 𝚺 1 φ → Hierarchy (R := R) 𝚺 1 ψ → P n φ → P n ψ → P n (φ ⋏ ψ))
-    (hOr : ∀ n φ ψ, Hierarchy (R := R) 𝚺 1 φ → Hierarchy (R := R) 𝚺 1 ψ → P n φ → P n ψ → P n (φ ⋎ ψ))
-    (hBall : ∀ n t φ, Hierarchy (R := R) 𝚺 1 φ → P (n + 1) φ → P n (∀⁰[R.operator ![#0, Rew.bShift t]] φ))
-    (hExs : ∀ n φ, Hierarchy (R := R) 𝚺 1 φ → P (n + 1) φ → P n (∃⁰ φ)) (n φ) : Hierarchy (R := R) 𝚺 1 φ → P n φ
+    (hEQ : ∀ n t₁ t₂, P n (.rel Language.Eq.eq ![t₁, t₂]))
+    (hNEQ : ∀ n t₁ t₂, P n (.nrel Language.Eq.eq ![t₁, t₂]))
+    (hLT : ∀ n t₁ t₂, P n (.rel Language.LT.lt ![t₁, t₂]))
+    (hNLT : ∀ n t₁ t₂, P n (.nrel Language.LT.lt ![t₁, t₂]))
+    (hAnd : ∀ n φ ψ, Hierarchy 𝚺 1 φ → Hierarchy 𝚺 1 ψ → P n φ → P n ψ → P n (φ ⋏ ψ))
+    (hOr : ∀ n φ ψ, Hierarchy 𝚺 1 φ → Hierarchy 𝚺 1 ψ → P n φ → P n ψ → P n (φ ⋎ ψ))
+    (hBall : ∀ n t φ, Hierarchy 𝚺 1 φ → P (n + 1) φ → P n (∀⁰[“#0 < !!(Rew.bShift t)”] φ))
+    (hExs : ∀ n φ, Hierarchy 𝚺 1 φ → P (n + 1) φ → P n (∃⁰ φ)) (n φ) : Hierarchy 𝚺 1 φ → P n φ
   |               Hierarchy.verum _ _ _ => hVerum _
   |              Hierarchy.falsum _ _ _ => hFalsum _
-  |               Hierarchy.rel _ _ _ _ => hRel _
-  |              Hierarchy.nrel _ _ _ _ => hNrel _
+  |  Hierarchy.rel _ _ Language.Eq.eq v => by simpa [←Matrix.fun_eq_vec_two] using hEQ _ (v 0) (v 1)
+  | Hierarchy.nrel _ _ Language.Eq.eq v => by simpa [←Matrix.fun_eq_vec_two] using hNEQ _ (v 0) (v 1)
+  |  Hierarchy.rel _ _ Language.LT.lt v => by simpa [←Matrix.fun_eq_vec_two] using hLT _ (v 0) (v 1)
+  | Hierarchy.nrel _ _ Language.LT.lt v => by simpa [←Matrix.fun_eq_vec_two] using hNLT _ (v 0) (v 1)
   |                 Hierarchy.and hp hq =>
     hAnd _ _ _ hp hq
-      (sigma₁_induction hVerum hFalsum hRel hNrel hAnd hOr hBall hExs _ _ hp)
-      (sigma₁_induction hVerum hFalsum hRel hNrel hAnd hOr hBall hExs _ _ hq)
+      (sigma₁_induction hVerum hFalsum hEQ hNEQ hLT hNLT hAnd hOr hBall hExs _ _ hp)
+      (sigma₁_induction hVerum hFalsum hEQ hNEQ hLT hNLT hAnd hOr hBall hExs _ _ hq)
   |                  Hierarchy.or hp hq =>
     hOr _ _ _ hp hq
-      (sigma₁_induction hVerum hFalsum hRel hNrel hAnd hOr hBall hExs _ _ hp)
-      (sigma₁_induction hVerum hFalsum hRel hNrel hAnd hOr hBall hExs _ _ hq)
+      (sigma₁_induction hVerum hFalsum hEQ hNEQ hLT hNLT hAnd hOr hBall hExs _ _ hp)
+      (sigma₁_induction hVerum hFalsum hEQ hNEQ hLT hNLT hAnd hOr hBall hExs _ _ hq)
   |                Hierarchy.ball pt hp => by
     rcases Rew.positive_iff.mp pt with ⟨t, rfl⟩
-    exact hBall _ t _ hp (sigma₁_induction hVerum hFalsum hRel hNrel hAnd hOr hBall hExs _ _ hp)
+    exact hBall _ t _ hp (sigma₁_induction hVerum hFalsum hEQ hNEQ hLT hNLT hAnd hOr hBall hExs _ _ hp)
   |                 Hierarchy.bexs pt hp => by
     apply hExs
     · simp [hp]
     · rcases Rew.positive_iff.mp pt with ⟨t, rfl⟩
-      apply hAnd _ _ _ (by simp) hp (by simpa [Semiformula.Operator.lt_def] using hMem _ _ _)
-        (sigma₁_induction hVerum hFalsum hRel hNrel hAnd hOr hBall hExs _ _ hp)
+      apply hAnd _ _ _ (by simp) hp (by simpa [Semiformula.Operator.lt_def] using hLT _ _ _)
+        (sigma₁_induction hVerum hFalsum hEQ hNEQ hLT hNLT hAnd hOr hBall hExs _ _ hp)
   |         Hierarchy.sigma (φ := φ) hp =>
     have : Hierarchy 𝚺 1 φ := hp.accum _
-    hExs _ _ this (sigma₁_induction hVerum hFalsum hRel hNrel hAnd hOr hBall hExs _ _ this)
+    hExs _ _ this (sigma₁_induction hVerum hFalsum hEQ hNEQ hLT hNLT hAnd hOr hBall hExs _ _ this)
   |                    Hierarchy.exs hp =>
-    hExs _ _ hp (sigma₁_induction hVerum hFalsum hRel hNrel hAnd hOr hBall hExs _ _ hp)
+    hExs _ _ hp (sigma₁_induction hVerum hFalsum hEQ hNEQ hLT hNLT hAnd hOr hBall hExs _ _ hp)
 
-lemma sigma₁_induction' {n φ} (hp : Hierarchy (R := R) 𝚺 1 φ)
-    {P : (n : ℕ) → Semiformula L ξ n → Prop}
+lemma sigma₁_induction' {n φ} (hp : Hierarchy 𝚺 1 φ)
+    {P : (n : ℕ) → Semiformula ℒₒᵣ ξ n → Prop}
     (hVerum : ∀ n, P n ⊤)
     (hFalsum : ∀ n, P n ⊥)
-    (hRel : ∀ n, P n sorry)
-    (hNrel : ∀ n, P n sorry)
-    (hAnd : ∀ n φ ψ, Hierarchy (R := R) 𝚺 1 φ → Hierarchy (R := R) 𝚺 1 ψ → P n φ → P n ψ → P n (φ ⋏ ψ))
-    (hOr : ∀ n φ ψ, Hierarchy (R := R) 𝚺 1 φ → Hierarchy (R := R) 𝚺 1 ψ → P n φ → P n ψ → P n (φ ⋎ ψ))
-    (hBall : ∀ n t φ, Hierarchy (R := R) 𝚺 1 φ → P (n + 1) φ → P n (∀⁰[R.operator ![#0, Rew.bShift t]] φ))
-    (hExs : ∀ n φ, Hierarchy (R := R) 𝚺 1 φ → P (n + 1) φ → P n (∃⁰ φ)) : P n φ :=
-  sigma₁_induction hVerum hFalsum hRel hNrel hAnd hOr hBall hExs n φ hp
+    (hEQ : ∀ n t₁ t₂, P n (.rel Language.Eq.eq ![t₁, t₂]))
+    (hNEQ : ∀ n t₁ t₂, P n (.nrel Language.Eq.eq ![t₁, t₂]))
+    (hLT : ∀ n t₁ t₂, P n (.rel Language.LT.lt ![t₁, t₂]))
+    (hNLT : ∀ n t₁ t₂, P n (.nrel Language.LT.lt ![t₁, t₂]))
+    (hAnd : ∀ n φ ψ, Hierarchy 𝚺 1 φ → Hierarchy 𝚺 1 ψ → P n φ → P n ψ → P n (φ ⋏ ψ))
+    (hOr : ∀ n φ ψ, Hierarchy 𝚺 1 φ → Hierarchy 𝚺 1 ψ → P n φ → P n ψ → P n (φ ⋎ ψ))
+    (hBall : ∀ n t φ, Hierarchy 𝚺 1 φ → P (n + 1) φ → P n (∀⁰[“#0 < !!(Rew.bShift t)”] φ))
+    (hExs : ∀ n φ, Hierarchy 𝚺 1 φ → P (n + 1) φ → P n (∃⁰ φ)) : P n φ :=
+  sigma₁_induction hVerum hFalsum hEQ hNEQ hLT hNLT hAnd hOr hBall hExs n φ hp
 
 end LOR
 
-end SetTheory
+end Arithmetic
+
+abbrev ArithmeticTheory.SoundOnHierarchy (T : ArithmeticTheory) (Γ : Polarity) (k : ℕ) := T.SoundOn (Arithmetic.Hierarchy Γ k)
+
+lemma ArithmeticTheory.soundOnHierarchy (T : ArithmeticTheory) (Γ : Polarity) (k : ℕ) [T.SoundOnHierarchy Γ k] :
+    T ⊢ σ → Arithmetic.Hierarchy Γ k σ → ℕ ⊧ₘ σ := SoundOn.sound
+
+instance (T : ArithmeticTheory) [T.SoundOnHierarchy 𝚺 1] : Entailment.Consistent T :=
+  T.consistent_of_sound (Arithmetic.Hierarchy 𝚺 1) (by simp)
+
+instance (T : ArithmeticTheory) [T.SoundOnHierarchy 𝚷 2] : Entailment.Consistent T :=
+  T.consistent_of_sound (Arithmetic.Hierarchy 𝚷 2) (by simp)
 
 end FirstOrder
 

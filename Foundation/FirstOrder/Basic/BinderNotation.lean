@@ -542,7 +542,7 @@ meta def unexpandBall : Unexpander
   | _                                                           => throw ()
 
 @[app_unexpander bexs]
-meta def unexpandBex : Unexpander
+meta def unexpandBexs : Unexpander
   | `($_ “ $φ:first_order_formula ” “ $ψ:first_order_formula ”) => `(“ (∃⁰[$φ] $ψ) ”)
   | `($_ “ $φ:first_order_formula ” $u:term                   ) => `(“ (∃⁰[$φ] !$u) ”)
   | `($_ $t:term                    “ $ψ:first_order_formula ”) => `(“ (∃⁰[!$t] $ψ) ”)

@@ -466,6 +466,10 @@ def ballMem [Operator.Mem L] (t : Semiterm L ξ n) (φ : Semiformula L ξ (n + 1
 
 def bexsMem [Operator.Mem L] (t : Semiterm L ξ n) (φ : Semiformula L ξ (n + 1)) : Semiformula L ξ n := ∃⁰[Operator.Mem.mem.operator ![#0, Rew.bShift t]] φ
 
+def ballOperator {R : Operator L 2} (t : Semiterm L ξ n) (φ : Semiformula L ξ (n + 1)) : Semiformula L ξ n := ∀⁰[Semiformula.Operator.operator R ![#0, Rew.bShift t]] φ
+
+def bexsOperator {R : Operator L 2} (t : Semiterm L ξ n) (φ : Semiformula L ξ (n + 1)) : Semiformula L ξ n := ∃⁰[Semiformula.Operator.operator R ![#0, Rew.bShift t]] φ
+
 end Semiformula
 
 namespace Rew
