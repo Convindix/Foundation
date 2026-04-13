@@ -5,6 +5,11 @@ public import Foundation.FirstOrder.Arithmetic.Basic.Model
 @[expose] public section
 namespace LO.FirstOrder.Arithmetic
 
+/- 
+The original arithmetical hierarchy, before I added my file for a generalized hierarchy.
+TODO: My goal was to develop `Hierarchy.lean` until it reaches the point where this file can be deleted.
+-/
+
 variable {L : Language} [L.LT]
 
 inductive Hierarchy : Polarity → ℕ → {n : ℕ} → Semiformula L ξ n → Prop
