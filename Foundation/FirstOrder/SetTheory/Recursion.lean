@@ -597,10 +597,10 @@ instance attemptOrDefault_notDefaultBranch_definable
   definability
 
 /--
-`y` is the transfinite-recursion value at `α` for stage function `F`.
+There is an attempt `f` of length `α` such that `y` equals `F f`. (TODO: Does this mean that `y` is the value of the transfinite recursion function on `α + 1`?)
 -/
 def IsTransfiniteRecursionValueOfFunction (F : V → V) (α y : V) : Prop :=
-  ∃ f : V, IsAttemptGraph F α f ∧ Function.Graph F y f
+  ∃ f : V, IsAttemptGraph F α f ∧ y = F f
 
 instance isTransfiniteRecursionValueOfFunction_definable
     (F : V → V) (hFdef : ℒₛₑₜ-function₁[V] F) :
@@ -614,10 +614,6 @@ If attempt functions exist on ordinal domains, then recursion values are unique.
 -/
 lemma transfinite_recursion_value_existsUnique_of_function_exists
     (F : V → V)
-    -- (hex :
-    --   ∀ α : V, IsOrdinal α →
-    --     ∃ f : V, IsFunction f ∧ domain f = α ∧
-    --       (∀ β ∈ α, ∃ z, ⟨β, z⟩ₖ ∈ f ∧ Function.Graph F z (f ↾ β))) :
     (hf : ∀ α : V, IsOrdinal α → ∃ f : V, IsAttemptGraph F α f) :
     ∀ α : V, IsOrdinal α →
       ∃! y : V, IsTransfiniteRecursionValueOfFunction F α y := by
